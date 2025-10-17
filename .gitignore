@@ -4,3 +4,4 @@ solution
 .vscode
 *-solutions
 *-private
+.DS_Store
