@@ -96,6 +96,7 @@ export class Name {
         if (i < 0 || i >= n) throw new Error("index out of range");
     }
 
+<<<<<<< HEAD
     /** Unescape a masked component: turns '\x' into 'x' for any x */
     private static unescape(masked: string): string {
         let result = "";
@@ -156,3 +157,6 @@ export class Name {
 }
 
 export default Name;
+=======
+}
+>>>>>>> 0ea859c (Added comment for getComponent method)
