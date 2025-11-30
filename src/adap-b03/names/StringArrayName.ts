@@ -3,67 +3,102 @@ import { Name } from "./Name";
 import { AbstractName } from "./AbstractName";
 
 export class StringArrayName extends AbstractName {
+  protected components: string[] = [];
 
-    protected components: string[] = [];
+  /** Expects that all components are already properly masked */
+  constructor(source: string[], delimiter: string = DEFAULT_DELIMITER) {
+    super(delimiter);
 
-    constructor(source: string[], delimiter?: string) {
-        super();
-        throw new Error("needs implementation or deletion");
+    if (!Array.isArray(source)) {
+      throw new Error("components must be an array");
     }
 
-    public clone(): Name {
-        throw new Error("needs implementation or deletion");
+    for (const c of source) {
+      if (typeof c !== "string") {
+        throw new Error("component must be string");
+      }
+      StringArrayName.validateMasked(c, this.delimiter);
     }
 
-    public asString(delimiter: string = this.delimiter): string {
-        throw new Error("needs implementation or deletion");
-    }
+    this.components = source.slice(); // keep masked components
+  }
 
-    public asDataString(): string {
-        throw new Error("needs implementation or deletion");
-    }
+  /** Deep copy of this instance */
+  public clone(): Name {
+    return new StringArrayName(this.components.slice(), this.delimiter);
+  }
 
-    public isEqual(other: Name): boolean {
-        throw new Error("needs implementation or deletion");
-    }
+  /** Number of components */
+  public getNoComponents(): number {
+    return this.components.length;
+  }
 
-    public getHashCode(): number {
-        throw new Error("needs implementation or deletion");
-    }
+  /** Returns masked component at index i */
+  public getComponent(i: number): string {
+    StringArrayName.checkIndexRange(i, this.components.length);
+    return this.components[i];
+  }
 
-    public isEmpty(): boolean {
-        throw new Error("needs implementation or deletion");
-    }
+  /** Expects that new Name component c is properly masked */
+  public setComponent(i: number, c: string): void {
+    StringArrayName.checkIndexRange(i, this.components.length);
+    StringArrayName.validateMasked(c, this.delimiter);
+    this.components[i] = c;
+  }
 
-    public getDelimiterCharacter(): string {
-        throw new Error("needs implementation or deletion");
+  /** Expects that new Name component c is properly masked */
+  public insert(i: number, c: string): void {
+    // allow insert at end as well
+    if (i < 0 || i > this.components.length) {
+      throw new Error("index is out of range");
     }
+    StringArrayName.validateMasked(c, this.delimiter);
+    this.components.splice(i, 0, c);
+  }
 
-    public getNoComponents(): number {
-        throw new Error("needs implementation or deletion");
-    }
+  /** Expects that new Name component c is properly masked */
+  public append(c: string): void {
+    StringArrayName.validateMasked(c, this.delimiter);
+    this.components.push(c);
+  }
 
-    public getComponent(i: number): string {
-        throw new Error("needs implementation or deletion");
-    }
+  public remove(i: number): void {
+    StringArrayName.checkIndexRange(i, this.components.length);
+    this.components.splice(i, 1);
+  }
 
-    public setComponent(i: number, c: string) {
-        throw new Error("needs implementation or deletion");
-    }
+  // ---------- helpers (masking + index checks) ----------
 
-    public insert(i: number, c: string) {
-        throw new Error("needs implementation or deletion");
+  /** Ensure index is within [0, n-1] */
+  private static checkIndexRange(i: number, n: number): void {
+    if (!Number.isInteger(i)) {
+      throw new Error("index must be integer");
     }
+    if (i < 0 || i >= n) {
+      throw new Error("index out of range");
+    }
+  }
 
-    public append(c: string) {
-        throw new Error("needs implementation or deletion");
+  /**
+   * Validate that `masked` contains no *unescaped* delimiter and no dangling ESC.
+   * This is the same logic you used in B01.
+   */
+  private static validateMasked(masked: string, delimiter: string): void {
+    const delimChar = delimiter;
+    for (let i = 0; i < masked.length; i++) {
+      const ch = masked[i];
+      if (ch === ESCAPE_CHARACTER) {
+        i++; // skip the next char (escaped)
+        if (i >= masked.length) {
+          // dangling escape at end is invalid per masking expectation
+          throw new Error("dangling escape in component");
+        }
+        continue;
+      }
+      if (ch === delimChar) {
+        // found an unescaped delimiter inside component -> invalid
+        throw new Error("unmasked delimiter in component");
+      }
     }
-
-    public remove(i: number) {
-        throw new Error("needs implementation or deletion");
-    }
-
-    public concat(other: Name): void {
-        throw new Error("needs implementation or deletion");
-    }
+  }
 }
